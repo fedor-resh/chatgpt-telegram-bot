@@ -1,8 +1,8 @@
 version: '3'
 services:
-  chatgpt-telegram-bot:
+  "chatgpt-telegram-bot":
     build:
-      context: .
+      context: ../../OneDrive/Рабочий стол/chatgpt-telegram-bot
       dockerfile: Dockerfile
     volumes:
       - .:/app

@@ -1,7 +1,5 @@
 __pycache__
 /.idea
-.env
-.DS_Store
-/usage_logs
 venv
 /.cache
+/__pycache__

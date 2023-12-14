@@ -2,7 +2,7 @@ from __future__ import annotations
 import datetime
 import logging
 import os
-
+import g4f
 import tiktoken
 
 import openai
@@ -39,7 +39,7 @@ def default_max_tokens(model: str) -> int:
         return base
     elif model in GPT_4_MODELS:
         return base * 2
-    elif model in GPT_3_16K_MODELS:    
+    elif model in GPT_3_16K_MODELS:
         if model == "gpt-3.5-turbo-1106":
             return 4096
         return base * 4
@@ -122,39 +122,10 @@ class OpenAIHelper:
         :param query: The query to send to the model
         :return: The answer from the model and the number of tokens used
         """
-        plugins_used = ()
+
         response = await self.__common_get_chat_response(chat_id, query)
-        if self.config['enable_functions']:
-            response, plugins_used = await self.__handle_function_call(chat_id, response)
-            if is_direct_result(response):
-                return response, '0'
-
-        answer = ''
-
-        if len(response.choices) > 1 and self.config['n_choices'] > 1:
-            for index, choice in enumerate(response.choices):
-                content = choice.message.content.strip()
-                if index == 0:
-                    self.__add_to_history(chat_id, role="assistant", content=content)
-                answer += f'{index + 1}\u20e3\n'
-                answer += content
-                answer += '\n\n'
-        else:
-            answer = response.choices[0].message.content.strip()
-            self.__add_to_history(chat_id, role="assistant", content=answer)
-
-        bot_language = self.config['bot_language']
-        show_plugins_used = len(plugins_used) > 0 and self.config['show_plugins_used']
-        plugin_names = tuple(self.plugin_manager.get_plugin_source_name(plugin) for plugin in plugins_used)
-        if self.config['show_usage']:
-            answer += "\n\n---\n" \
-                      f"💰 {str(response.usage.total_tokens)} {localized_text('stats_tokens', bot_language)}" \
-                      f" ({str(response.usage.prompt_tokens)} {localized_text('prompt', bot_language)}," \
-                      f" {str(response.usage.completion_tokens)} {localized_text('completion', bot_language)})"
-            if show_plugins_used:
-                answer += f"\n🔌 {', '.join(plugin_names)}"
-        elif show_plugins_used:
-            answer += f"\n\n---\n🔌 {', '.join(plugin_names)}"
+        answer = response.choices[0].message.content.strip()
+        self.__add_to_history(chat_id, role="assistant", content=answer)
 
         return answer, response.usage.total_tokens
 
@@ -167,20 +138,20 @@ class OpenAIHelper:
         """
         plugins_used = ()
         response = await self.__common_get_chat_response(chat_id, query, stream=True)
-        if self.config['enable_functions']:
-            response, plugins_used = await self.__handle_function_call(chat_id, response, stream=True)
-            if is_direct_result(response):
-                yield response, '0'
-                return
 
         answer = ''
-        async for chunk in response:
-            if len(chunk.choices) == 0:
-                continue
-            delta = chunk.choices[0].delta
-            if delta.content:
-                answer += delta.content
+        if 'gpt-4' in self.config['model']:
+            for chunk in response:
+                answer += chunk
                 yield answer, 'not_finished'
+        else:
+            async for chunk in response:
+                if len(chunk.choices) == 0:
+                    continue
+                delta = chunk.choices[0].delta
+                if delta.content:
+                    answer += delta.content
+                    yield answer, 'not_finished'
         answer = answer.strip()
         self.__add_to_history(chat_id, role="assistant", content=answer)
         tokens_used = str(self.__count_tokens(self.conversations[chat_id]))
@@ -245,12 +216,12 @@ class OpenAIHelper:
                 'frequency_penalty': self.config['frequency_penalty'],
                 'stream': stream
             }
-
-            if self.config['enable_functions']:
-                functions = self.plugin_manager.get_functions_specs()
-                if len(functions) > 0:
-                    common_args['functions'] = self.plugin_manager.get_functions_specs()
-                    common_args['function_call'] = 'auto'
+            if 'gpt-4' in self.config['model']:
+                return await g4f.ChatCompletion.create_async(
+                    model=g4f.models.default,
+                    provider=g4f.Provider.Bing,
+                    messages=self.conversations[chat_id],
+                )
             return await self.client.chat.completions.create(**common_args)
 
         except openai.RateLimitError as e:
@@ -266,7 +237,7 @@ class OpenAIHelper:
         function_name = ''
         arguments = ''
         if stream:
-            async for item in response:
+            for item in response:
                 if len(item.choices) > 0:
                     first_choice = item.choices[0]
                     if first_choice.delta and first_choice.delta.function_call:

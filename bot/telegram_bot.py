@@ -5,6 +5,8 @@ import logging
 import os
 
 from uuid import uuid4
+
+from numpy.distutils.command.build import build
 from telegram import BotCommandScopeAllGroupChats, Update, constants
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton, InlineQueryResultArticle
 from telegram import InputTextMessageContent, BotCommand
@@ -40,7 +42,9 @@ class ChatGPTTelegramBot:
             BotCommand(command='help', description=localized_text('help_description', bot_language)),
             BotCommand(command='reset', description=localized_text('reset_description', bot_language)),
             BotCommand(command='stats', description=localized_text('stats_description', bot_language)),
-            BotCommand(command='resend', description=localized_text('resend_description', bot_language))
+            BotCommand(command='resend', description=localized_text('resend_description', bot_language)),
+
+            BotCommand(command='choose_model', description=localized_text('resend_description', bot_language)),
         ]
         # If imaging is enabled, add the "image" command to the list
         if self.config.get('enable_image_generation', False):
@@ -57,6 +61,18 @@ class ChatGPTTelegramBot:
         self.usage = {}
         self.last_message = {}
         self.inline_queries_cache = {}
+
+    async def choose_model(self, update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
+    #     show buttons with models
+        buttons = [
+            [InlineKeyboardButton(text='gpt-3.5-turbo', callback_data='gpt-3.5-turbo')],
+            [InlineKeyboardButton(text='gpt-4', callback_data='gpt-4')],
+        ]
+        reply_markup = InlineKeyboardMarkup(buttons)
+        model = await update.message.reply_text('Choose model:', reply_markup=reply_markup)
+        print(model.callback_query)
+        await model.delete()
+
 
     async def help(self, update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
         """
@@ -858,6 +874,19 @@ class ChatGPTTelegramBot:
         application.add_handler(CommandHandler('start', self.help))
         application.add_handler(CommandHandler('stats', self.stats))
         application.add_handler(CommandHandler('resend', self.resend))
+
+        async def button_callback(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
+            query = update.callback_query
+            await query.answer()  # Acknowledge the callback query
+
+            # Process the selection
+            model_selected = query.data  # This will be 'gpt-3.5-turbo' or 'gpt-4'
+            self.openai.config['model'] = model_selected
+            await query.edit_message_text(f"You selected {model_selected}")
+
+        application.add_handler(CommandHandler('choose_model', self.choose_model))
+        application.add_handler(CallbackQueryHandler(button_callback, pattern='^gpt.*'))
+
         application.add_handler(CommandHandler(
             'chat', self.prompt, filters=filters.ChatType.GROUP | filters.ChatType.SUPERGROUP)
         )
@@ -870,7 +899,6 @@ class ChatGPTTelegramBot:
             constants.ChatType.GROUP, constants.ChatType.SUPERGROUP, constants.ChatType.PRIVATE
         ]))
         application.add_handler(CallbackQueryHandler(self.handle_callback_inline_query))
-
         application.add_error_handler(error_handler)
 
         application.run_polling()
