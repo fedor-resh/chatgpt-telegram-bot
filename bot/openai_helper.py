@@ -140,7 +140,7 @@ class OpenAIHelper:
         response = await self.__common_get_chat_response(chat_id, query, stream=True)
 
         answer = ''
-        if 'gpt-4' in self.config['model']:
+        if 'gpt-4' == self.config['model']:
             for chunk in response:
                 answer += chunk
                 yield answer, 'not_finished'
@@ -216,6 +216,7 @@ class OpenAIHelper:
                 'frequency_penalty': self.config['frequency_penalty'],
                 'stream': stream
             }
+            # print(self.conversations[chat_id])
             if 'gpt-4' in self.config['model']:
                 return await g4f.ChatCompletion.create_async(
                     model=g4f.models.default,
@@ -396,7 +397,7 @@ class OpenAIHelper:
             {"role": "user", "content": str(conversation)}
         ]
         response = await self.client.chat.completions.create(
-            model=self.config['model'],
+            model='gpt-3.5-turbo',
             messages=messages,
             temperature=0.4
         )

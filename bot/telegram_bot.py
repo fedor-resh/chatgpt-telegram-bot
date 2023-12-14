@@ -24,6 +24,9 @@ from openai_helper import OpenAIHelper, localized_text
 from usage_tracker import UsageTracker
 
 
+
+
+
 class ChatGPTTelegramBot:
     """
     Class representing a ChatGPT Telegram Bot.
@@ -44,7 +47,7 @@ class ChatGPTTelegramBot:
             BotCommand(command='stats', description=localized_text('stats_description', bot_language)),
             BotCommand(command='resend', description=localized_text('resend_description', bot_language)),
 
-            BotCommand(command='choose_model', description=localized_text('resend_description', bot_language)),
+            BotCommand(command='choose_model', description=localized_text('choose_model', bot_language)),
         ]
         # If imaging is enabled, add the "image" command to the list
         if self.config.get('enable_image_generation', False):
@@ -62,18 +65,13 @@ class ChatGPTTelegramBot:
         self.last_message = {}
         self.inline_queries_cache = {}
 
-    async def choose_model(self, update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
-    #     show buttons with models
+    async def __choose_model(self, update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
         buttons = [
             [InlineKeyboardButton(text='gpt-3.5-turbo', callback_data='gpt-3.5-turbo')],
             [InlineKeyboardButton(text='gpt-4', callback_data='gpt-4')],
         ]
         reply_markup = InlineKeyboardMarkup(buttons)
-        model = await update.message.reply_text('Choose model:', reply_markup=reply_markup)
-        print(model.callback_query)
-        await model.delete()
-
-
+        await update.message.reply_text(f'Выбери модель:\n(Сейчас выбрана: {self.openai.config.get("model")})', reply_markup=reply_markup)
     async def help(self, update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
         """
         Shows the help menu.
@@ -884,7 +882,7 @@ class ChatGPTTelegramBot:
             self.openai.config['model'] = model_selected
             await query.edit_message_text(f"You selected {model_selected}")
 
-        application.add_handler(CommandHandler('choose_model', self.choose_model))
+        application.add_handler(CommandHandler('choose_model', self.__choose_model))
         application.add_handler(CallbackQueryHandler(button_callback, pattern='^gpt.*'))
 
         application.add_handler(CommandHandler(
