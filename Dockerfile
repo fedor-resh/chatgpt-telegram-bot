@@ -9,5 +9,7 @@ FROM python:3.11
 WORKDIR /app
 COPY . .
 RUN pip install -r requirements.txt --no-cache-dir
+RUN sudo apt-get update
+RUN sudo apt-get install ffmpeg
 
 CMD ["python", "bot/main.py"]
