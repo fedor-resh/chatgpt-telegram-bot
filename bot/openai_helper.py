@@ -57,7 +57,7 @@ def are_functions_available(model: str) -> bool:
     if model in ("gpt-3.5-turbo-0301", "gpt-4-0314", "gpt-4-32k-0314"):
         return False
     # Stable models will be updated to support functions on June 27, 2023
-    if model in ("gpt-3.5-turbo", "gpt-3.5-turbo-1106", "gpt-4", "gpt-4-32k","gpt-4-1106-preview"):
+    if model in ("gpt-3.5-turbo", "gpt-3.5-turbo-1106", "gpt-4", "gpt-4-32k", "gpt-4-1106-preview"):
         return datetime.date.today() > datetime.date(2023, 6, 27)
     return True
 
@@ -124,7 +124,10 @@ class OpenAIHelper:
         """
 
         response = await self.__common_get_chat_response(chat_id, query)
-        answer = response.choices[0].message.content.strip()
+        if type(response) == str:
+            answer = response
+        else:
+            answer = response.choices[0].message.content.strip()
         self.__add_to_history(chat_id, role="assistant", content=answer)
 
         return answer, response.usage.total_tokens
@@ -345,7 +348,8 @@ class OpenAIHelper:
         try:
             with open(filename, "rb") as audio:
                 prompt_text = self.config['whisper_prompt']
-                result = await self.client.audio.transcriptions.create(model="whisper-1", file=audio, prompt=prompt_text)
+                result = await self.client.audio.transcriptions.create(model="whisper-1", file=audio,
+                                                                       prompt=prompt_text)
                 return result.text
         except Exception as e:
             logging.exception(e)
