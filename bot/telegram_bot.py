@@ -68,7 +68,7 @@ class ChatGPTTelegramBot:
     async def __choose_model(self, update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
         buttons = [
             [InlineKeyboardButton(text='gpt-3.5-turbo', callback_data='gpt-3.5-turbo')],
-            [InlineKeyboardButton(text='gpt-4', callback_data='gpt-4')],
+            [InlineKeyboardButton(text='gpt-4 (slow)', callback_data='gpt-4')],
         ]
         reply_markup = InlineKeyboardMarkup(buttons)
         await update.message.reply_text(f'Выбери модель:\n(Сейчас выбрана: {self.openai.config.get("model")})', reply_markup=reply_markup)
@@ -518,14 +518,14 @@ class ChatGPTTelegramBot:
                             try:
                                 await edit_message_with_retry(context, chat_id, str(sent_message.message_id),
                                                               stream_chunks[-2])
-                            except:
+                            except e:
                                 pass
                             try:
                                 sent_message = await update.effective_message.reply_text(
                                     message_thread_id=get_thread_id(update),
                                     text=content if len(content) > 0 else "..."
                                 )
-                            except:
+                            except e:
                                 pass
                             continue
 

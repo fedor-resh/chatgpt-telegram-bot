@@ -13,10 +13,8 @@ def main():
     load_dotenv()
 
     # Setup logging
-    logging.basicConfig(
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        level=logging.INFO
-    )
+    logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
+    # logging.getLogger("telegram").setLevel(logging.WARNING)
     logging.getLogger("httpx").setLevel(logging.WARNING)
 
     # Check if the required environment variables are set

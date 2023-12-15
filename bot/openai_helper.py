@@ -75,7 +75,7 @@ def localized_text(key, bot_language):
     Keys and translations can be found in the translations.json.
     """
     try:
-        return translations[bot_language][key]
+        return translations[key]
     except KeyError:
         logging.warning(f"No translation available for bot_language code '{bot_language}' and key '{key}'")
         # Fallback to English if the translation is not available
@@ -222,6 +222,7 @@ class OpenAIHelper:
                     model=g4f.models.default,
                     provider=g4f.Provider.Bing,
                     messages=self.conversations[chat_id],
+                    max_tokens=1000,
                 )
             return await self.client.chat.completions.create(**common_args)
 
