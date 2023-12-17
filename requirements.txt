@@ -11,4 +11,4 @@ spotipy~=2.23.0
 pytube~=15.0.0
 gtts~=2.3.2
 whois~=0.9.27
-g4f
+g4f==0.1.9.3

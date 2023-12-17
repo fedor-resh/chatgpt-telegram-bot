@@ -130,7 +130,7 @@ class OpenAIHelper:
             answer = response.choices[0].message.content.strip()
         self.__add_to_history(chat_id, role="assistant", content=answer)
 
-        return answer, response.usage.total_tokens
+        return answer, response.usage.total_tokens if type(response) != str else 0
 
     async def get_chat_response_stream(self, chat_id: int, query: str):
         """
