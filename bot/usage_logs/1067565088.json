@@ -1,1 +1,17 @@
-{"user_name": "@fedukus", "current_cost": {"day": 0.00029600000000000004, "month": 0.036788, "all_time": 0.036788, "last_update": "2023-12-17"}, "usage_history": {"chat_tokens": {"2023-12-14": 8402, "2023-12-15": 9844, "2023-12-17": 148}, "transcription_seconds": {}, "number_images": {}, "tts_characters": {}}}
+{
+    "user_name": "@fedukus",
+    "current_cost": {
+        "day": 0.001268,
+        "month": 0.001268,
+        "all_time": 0.001268,
+        "last_update": "2023-12-17"
+    },
+    "usage_history": {
+        "chat_tokens": {
+            "2023-12-17": 634
+        },
+        "transcription_seconds": {},
+        "number_images": {},
+        "tts_characters": {}
+    }
+}
